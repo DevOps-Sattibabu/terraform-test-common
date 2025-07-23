@@ -1,0 +1,55 @@
+pipeline {
+  agent any
+  tools {
+        maven 'MAVEN'
+        terraform "terraform-1.12.2"
+    }
+    environment {
+        TF_TOKEN_app_terraform_io = credentials('terraform-cloud')
+    }
+    parameters {
+        string(name: 'RESOURCE_ADDR', defaultValue: '')
+        string(name: 'RESOURCE_ID', defaultValue: '')
+    }
+    
+  stages {
+    stage('Checkout') {
+      steps {
+                git branch: 'dev', url: 'https://github.com/DevOps-Sattibabu/terraform-test-common.git'
+      }
+    }
+  stage('terraform-init') {
+        steps {
+            bat """
+            terraform --version
+            REM Configure Terraform Cloud credentials
+            mkdir %USERPROFILE%\\.terraform.d
+            echo {
+                "credentials": {
+                    "app.terraform.io": {
+                    "token": "%TF_TOKEN_app_terraform_io%"
+                    }
+                }
+            } > %USERPROFILE%\\.terraform.d\\credentials.tfrc.json
+            terraform init -no-color
+            """
+        }
+    }
+    stage('terraform-import') {
+        steps {
+          bat """
+          terraform import ${params.RESOURCE_ADDR} ${params.RESOURCE_ID}
+          """
+        }
+    }
+     stage('terraform-plan and apply') {
+        steps {
+          bat """
+          terraform plan -np-color
+          //terraform apply -auto-approve -no-color
+          """
+        }
+    }
+
+  }
+}
