@@ -1,9 +1,10 @@
-terraform {
-  backend "remote" {
-    organization = "Sattibabu-DevOps"
+terraform { 
+  cloud { 
+    
+    organization = "Sattibabu-DevOps" 
 
-    workspaces {
-      name = "terraform-test-common"
-    }
-  }
+    workspaces { 
+      name = "terraform-test-common" 
+    } 
+  } 
 }
