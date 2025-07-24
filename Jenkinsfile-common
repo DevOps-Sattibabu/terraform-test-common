@@ -6,6 +6,8 @@ pipeline {
     }
     environment {
         TF_TOKEN_app_terraform_io = credentials('terraform-cloud')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access')
     }
     parameters {
         string(name: 'RESOURCE_ADDR', defaultValue: '')
@@ -13,6 +15,11 @@ pipeline {
     }
     
   stages {
+    stage('cleanws') {
+        steps {
+            cleanWs()
+        }
+    }  
     stage('Checkout') {
       steps {
                 git branch: 'dev', url: 'https://github.com/DevOps-Sattibabu/terraform-test-common.git'
@@ -38,15 +45,14 @@ pipeline {
     stage('terraform-import') {
         steps {
           bat """
-          terraform import ${params.RESOURCE_ADDR} ${params.RESOURCE_ID}
+          terraform import ${params.RESOURCE_ADDR} ${params.RESOURCE_ID} -no-color
           """
         }
     }
      stage('terraform-plan and apply') {
         steps {
           bat """
-          terraform plan -np-color
-          //terraform apply -auto-approve -no-color
+          terraform plan -no-color
           """
         }
     }
