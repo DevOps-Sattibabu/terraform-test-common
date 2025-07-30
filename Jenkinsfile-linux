@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+    tools {
+        terraform "terraform-1.12.2"
+    }
+    environment {
+        TF_TOKEN_app_terraform_io = credentials('terraform-cloud')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access')
+    }
+    parameters {
+        string(name: 'RESOURCE_ADDR', defaultValue: '')
+        string(name: 'RESOURCE_ID', defaultValue: '')
+    }
+
+    stages {
+        stage('cleanws') {
+            steps {
+                cleanWs()
+            }
+        }  
+        stage('Checkout') {
+            steps {
+                git branch: 'dev', url: 'https://github.com/DevOps-Sattibabu/terraform-test-common.git'
+            }
+        }
+        stage('terraform-init') {
+            steps {
+                sh """
+                terraform --version
+                # Configure Terraform Cloud credentials
+                mkdir -p \$HOME/.terraform.d
+                cat > \$HOME/.terraform.d/credentials.tfrc.json <<EOF
+                {
+                  "credentials": {
+                    "app.terraform.io": {
+                      "token": "${TF_TOKEN_app_terraform_io}"
+                    }
+                  }
+                }
+                EOF
+                terraform init -no-color
+                """
+            }
+        }
+        stage('terraform-import') {
+            steps {
+                sh """
+                terraform import ${params.RESOURCE_ADDR} ${params.RESOURCE_ID} -no-color
+                """
+            }
+        }
+        stage('terraform-plan and apply') {
+            steps {
+                sh """
+                terraform plan -no-color
+                """
+            }
+        }
+    }
+}
